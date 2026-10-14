@@ -14,3 +14,7 @@ test-results/
 *.sqlite3
 tmp/
 uploads/
+*.sqlite-shm
+*.sqlite-wal
+*.tsbuildinfo
+.impeccable/cache/
