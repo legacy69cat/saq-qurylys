@@ -1,6 +1,6 @@
 import {assessAd, type AdAssessment} from './ad-scoring';
 import {FACTOR_RULES} from './risk';
-export const AD_REPORT_VERSION='ad-report-1';
+export const AD_REPORT_VERSION='ad-report-2';
 export const MAX_AD_LENGTH=20000;
 export type AdReport={
  version:string; assessedAt:string; assessment:AdAssessment;
@@ -20,17 +20,17 @@ export function buildAdReport(text:string,now=Date.now()):AdReport{
   {code:'R6',weight:FACTOR_RULES.R6.weight,description:'Документы о сроках и задержке ввода объекта.'},
  ]};
 }
-/** Plain text, suitable for Telegram without parse_mode. No public endpoint or bot dependency. */
-export function formatAdReport(report:AdReport):string{
+/** Shared, bounded plain-text result for web and Telegram. */
+export function formatAdReport(report:AdReport,options:{source?:'text'|'image'}={}):string{
  const a=report.assessment;
  return [
-  'Предварительная проверка объявления',report.conclusion,
-  a.category==='insufficient'?'Оценка по тексту: недостаточно данных.':`Признаки по тексту: ${a.score} из 35 возможных баллов R2/R3.`,
-  'Полный риск объекта: не определён. Это не вероятность нарушения.',
-  ...a.signals.map(s=>`${s.code}: +${s.points}\nЦитата: «${s.quote.slice(0,400)}»${s.quote.length>400?' (фрагмент)':''}\n${s.reason}`),
-  ...a.reasons,
-  'Не проверено:',...report.missing.map(m=>`${m.code} (${m.weight} баллов): ${m.description}`),
-  '0 баллов не означает отсутствие риска. Изображения, видео и речь не анализировались. Текстовые признаки требуют подтверждения аналитиком.',
-  `Версия правил: ${a.version}. Дата оценки: ${report.assessedAt.slice(0,10)}.`,
+  'Проверка объявления', report.conclusion,
+  a.category==='insufficient'?'Оценка по тексту: недостаточно данных.':`Предварительные баллы: ${a.score}. Проверены только текстовые признаки R2/R3 (максимум 35), а не весь риск объекта.`,
+  ...a.signals.map(s=>`${s.code==='R2'?'Предложение внести деньги':'Признаки строительства'} · +${s.points} (${s.code})\n«${s.quote.slice(0,300)}»${s.quote.length>300?' (фрагмент)':''}`),
+  'Полный риск объекта: не определён. Разрешения, жалобы, ход строительства и сроки ещё не проверены.',
+  'Что проверить дальше:\n1. Уточните БИН застройщика, адрес и очередь ЖК.\n2. Сверьте разрешение или гарантию и реквизиты объекта: https://homeportal.kz\n3. Передайте документы аналитику для проверки остальных факторов.',
+  '0 баллов не означает отсутствие риска. Баллы не являются вероятностью нарушения.',
+  options.source==='image'?'Источник: распознанный текст снимка. ИИ мог ошибиться — сверьте суммы и отрицания.':'Источник: присланный текст. Изображения, видео и речь не анализировались.',
+  `Дата: ${report.assessedAt.slice(0,10)} · правила ${a.version}.`,
  ].join('\n\n');
 }

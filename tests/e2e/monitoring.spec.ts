@@ -89,8 +89,8 @@ test('review queue retains ambiguous and textless ads without invented points', 
     await page.goto('/monitoring');
     await page.getByRole('link', { name: 'Открыть очередь проверки →', exact: true }).click();
     await expect(page.locator('.collected-post')).toHaveCount(3);
-    await expect(page.locator('.collected-post').first()).toContainText('35 / 35');
-    await expect(page.locator('.collected-post').filter({ hasText: 'Рассрочка без банка' })).toContainText('0 / 35');
+    await expect(page.locator('.collected-post').first()).toContainText('35 баллов');
+    await expect(page.locator('.collected-post').filter({ hasText: 'Рассрочка без банка' })).toContainText('0 баллов');
     await expect(page.locator('.collected-post').filter({ hasText: '#новостройки' })).toContainText('Нет оценки');
     await page.getByRole('combobox', { name: 'Оценка', exact: true }).selectOption('candidate');
     await page.getByRole('button', { name: 'Применить', exact: true }).click();

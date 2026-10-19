@@ -17,9 +17,9 @@ it('requires webhook secret before touching data',async()=>{
  expect((await POST(req('wrong','{}'))).status).toBe(401);expect((await POST(req('secret','x'.repeat(64001)))).status).toBe(413);expect((await POST(req('secret','{}'))).status).toBe(400);expect((await POST(req('secret',JSON.stringify({update_id:1,message:{chat:{id:1,type:'group'}}})))).status).toBe(200);
 });
 it('scores text without declaring full risk and does not fetch links',()=>{
- expect(textReport('https://example.com/ad')).toContain('недостаточно данных');const r=textReport('ЖК строится. Внесите депозит 400 000 тенге.');expect(r).toContain('35 из 35');expect(r).toContain('Полный риск объекта: не определён');
+ expect(textReport('https://example.com/ad')).toContain('недостаточно данных');const r=textReport('ЖК строится. Внесите депозит 400 000 тенге.');expect(r).toContain('Предварительные баллы: 35');expect(r).toContain('Полный риск объекта: не определён');
 });
-it('labels OCR evidence and uses the same scoring rules',async()=>{vi.stubEnv('AI_GATEWAY_API_KEY','test');vi.stubEnv('DRONE_AI_MODEL','test');const r=await photoReport(new Uint8Array([1]));expect(r).toContain('ИИ мог ошибиться');expect(r).toContain('35 из 35');expect(r).not.toContain('Изображения, видео и речь не анализировались.');});
+it('labels OCR evidence and uses the same scoring rules',async()=>{vi.stubEnv('AI_GATEWAY_API_KEY','test');vi.stubEnv('DRONE_AI_MODEL','test');const r=await photoReport(new Uint8Array([1]));expect(r).toContain('ИИ мог ошибиться');expect(r).toContain('Предварительные баллы: 35');expect(r).not.toContain('Изображения, видео и речь не анализировались.');});
 it('sends plain text in bounded chunks and refuses unsafe download paths',async()=>{
  vi.stubEnv('TELEGRAM_BOT_TOKEN','test');const mock=vi.fn(async()=>Response.json({ok:true,result:{file_path:'../../external'}}));vi.stubGlobal('fetch',mock);await sendText(123,'<b>untrusted</b>'.repeat(400));for(const call of mock.mock.calls){const body=JSON.parse((call as unknown as [string,RequestInit])[1].body as string);expect(body.parse_mode).toBeUndefined();expect(body.text.length).toBeLessThanOrEqual(3500);}await expect(downloadPhoto('file')).rejects.toThrow('Unsupported photo');
 });
@@ -29,5 +29,5 @@ it('delivers a scored reply once for repeated Telegram updates',async()=>{
  const db=await openDatabase(path,{create:true});await db.exec('CREATE TABLE auth_throttle(key TEXT PRIMARY KEY,attempts INTEGER,reset_at INTEGER)');db.close();
  const sent=vi.fn(async()=>Response.json({ok:true,result:{message_id:1}}));vi.stubGlobal('fetch',sent);
  const req=()=>new Request('https://site/api/webhooks/telegram',{method:'POST',headers:{'x-telegram-bot-api-secret-token':'secret'},body:JSON.stringify({update_id:42,message:{chat:{id:123,type:'private'},text:'ЖК строится. Внесите депозит 400 000 тенге.'}})});
- try{expect((await POST(req())).status).toBe(200);expect((await POST(req())).status).toBe(200);expect(sent).toHaveBeenCalledTimes(1);const body=JSON.parse((sent.mock.calls[0] as unknown as [string,RequestInit])[1].body as string);expect(body.chat_id).toBe(123);expect(body.text).toContain('35 из 35');}finally{rmSync(dir,{recursive:true,force:true});}
+ try{expect((await POST(req())).status).toBe(200);expect((await POST(req())).status).toBe(200);expect(sent).toHaveBeenCalledTimes(1);const body=JSON.parse((sent.mock.calls[0] as unknown as [string,RequestInit])[1].body as string);expect(body.chat_id).toBe(123);expect(body.text).toContain('Предварительные баллы: 35');}finally{rmSync(dir,{recursive:true,force:true});}
 });

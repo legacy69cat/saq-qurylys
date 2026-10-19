@@ -45,7 +45,7 @@ test('sourced object → map marker → documentary score', async ({ page }) => 
     await link.getByRole('button').click();
     await expect(page.locator('.publication-card')).toContainText('Продажа квартир в строящемся доме. Внесите депозит 300 000 ₸.');
     await expect(page.locator('.detail-score')).toContainText('5');
-    await expect(page.locator('.publication-card .ad-score')).toContainText('35 / 35');
+    await expect(page.locator('.publication-card .ad-score')).toContainText('35 баллов');
     await page.getByText('Сохранить найденные признаки как гипотезы', { exact: true }).click();
     const rules = page.getByRole('form', { name: 'Сохранить гипотезы по правилам', exact: true });
     await rules.getByLabel('Автор решения').fill('Аналитик');
