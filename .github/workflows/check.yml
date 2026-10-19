@@ -1,19 +1,31 @@
 name: Verify
 on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       SAQ_AUTH_MODE: local
       APP_ENV: test
+      TURSO_DATABASE_URL: ''
+      TURSO_AUTH_TOKEN: ''
+      AI_GATEWAY_API_KEY: ''
+      DRONE_AI_MODEL: ''
+      APIFY_TOKEN: ''
+      TELEGRAM_BOT_TOKEN: ''
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npm run check
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
-      - run: npx playwright test -c playwright.auth.config.ts
+      - run: npm run test:auth

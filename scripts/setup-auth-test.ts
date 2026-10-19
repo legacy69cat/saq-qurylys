@@ -1,3 +1,4 @@
+if(process.env.TURSO_DATABASE_URL)throw new Error('Tests must never use a remote database');
 import { openDatabase, databasePath } from '../src/server/db/connection';
 import { migrate } from '../src/server/db/migrations';
 import { createUser } from '../src/server/auth/core';

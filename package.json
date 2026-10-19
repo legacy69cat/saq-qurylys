@@ -21,7 +21,10 @@
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "test:ai:live": "node --import tsx --env-file-if-exists=.env.local scripts/evaluate-ai.ts",
     "collect:social": "node --import tsx --env-file-if-exists=.env.local scripts/collect-social.ts",
-    "db:import": "node --import tsx --env-file-if-exists=.env.local scripts/import-projects.ts"
+    "db:import": "node --import tsx --env-file-if-exists=.env.local scripts/import-projects.ts",
+    "test:auth": "playwright test -c playwright.auth.config.ts",
+    "users": "node --import tsx --env-file-if-exists=.env.local scripts/users.ts",
+    "telegram:setup": "node --import tsx --env-file-if-exists=.env.local scripts/setup-telegram.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

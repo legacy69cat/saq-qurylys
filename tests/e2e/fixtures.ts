@@ -1,3 +1,4 @@
+if(process.env.TURSO_DATABASE_URL)throw new Error('Tests must never use a remote database');
 import { test as base, expect } from "@playwright/test";
 import { openDatabase } from "../../src/server/db/connection";
 import { migrate } from "../../src/server/db/migrations";
