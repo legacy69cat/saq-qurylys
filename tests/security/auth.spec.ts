@@ -1,0 +1,21 @@
+import { test, expect } from '@playwright/test';
+test('anonymous access, invalid login, authenticated API and revoked session', async ({ page, request }) => {
+    expect((await request.get('/api/projects')).status()).toBe(401);
+    await page.goto('/monitoring');
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByLabel('Логин', { exact: true }).fill('analyst');
+    await page.getByLabel('Пароль', { exact: true }).fill('incorrect');
+    await page.getByRole('button', { name: 'Войти', exact: true }).click();
+    await expect(page.locator('.form-error')).toContainText('Неверный');
+    await page.getByLabel('Логин', { exact: true }).fill('analyst');
+    await page.getByLabel('Пароль', { exact: true }).fill('isolated-test-password-123');
+    await page.getByRole('button', { name: 'Войти', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible();
+    expect((await page.request.get('/api/projects')).status()).toBe(200);
+    const session = (await page.context().cookies()).find(c => c.name === 'saq_session')!;
+    expect(session.httpOnly).toBe(true);
+    expect(session.sameSite).toBe('Lax');
+    await page.getByRole('button', { name: 'Выйти' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    expect((await request.get('/api/projects', { headers: { Cookie: `saq_session=${session.value}` } })).status()).toBe(401);
+});

@@ -1,0 +1,54 @@
+name: saq
+x-app: &app
+  image: saq:local
+  build: ..
+  env_file: ${SAQ_ENV_FILE:-production.env}
+  environment:
+    APP_ENV: production
+    SAQ_AUTH_MODE: session
+    SAQ_DEMO_MODE: '0'
+    DATABASE_PATH: /var/lib/saq/saq.sqlite
+    BACKUP_DIR: /var/backups/saq
+  volumes:
+    - database:/var/lib/saq
+    - backups:/var/backups/saq
+  init: true
+  security_opt: [no-new-privileges:true]
+services:
+  migrate:
+    <<: *app
+    command: [node, --import, tsx, scripts/database.ts, migrate]
+    restart: 'no'
+  web:
+    <<: *app
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/liveness').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  worker:
+    <<: *app
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    command: [node, --import, tsx, scripts/collect-social.ts]
+    restart: unless-stopped
+    stop_grace_period: 150s
+  proxy:
+    image: caddy:2
+    env_file: ${SAQ_ENV_FILE:-production.env}
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificates:/data
+      - caddy_config:/config
+    depends_on:
+      web: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  database:
+  backups:
+  certificates:
+  caddy_config:

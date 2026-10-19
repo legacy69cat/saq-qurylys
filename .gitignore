@@ -18,3 +18,5 @@ uploads/
 *.sqlite-wal
 *.tsbuildinfo
 .impeccable/cache/
+deploy/*.env
+.vercel

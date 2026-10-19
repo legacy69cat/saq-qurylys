@@ -1,0 +1,68 @@
+import { expect, test } from './fixtures';
+import { openDatabase } from '../../src/server/db/connection';
+test('sourced object → map marker → documentary score', async ({ page }) => {
+    await page.goto('/projects/new');
+    const form = page.getByRole('form', { name: 'Сохранить объект', exact: true });
+    const firstRequestId = await form.locator('input[name=requestId]').inputValue();
+    await form.getByLabel('Название ЖК').fill('Проверка реального потока');
+    await form.getByLabel('Адрес', { exact: true }).fill('Усть-Каменогорск, тестовый адрес');
+    await form.getByLabel('Застройщик', { exact: true }).fill('Тестовый застройщик');
+    await form.getByLabel('Широта').fill('49.92');
+    await form.getByLabel('Долгота').fill('82.62');
+    await form.getByLabel('Источник сведений').fill('Тестовый каталог');
+    await form.getByLabel('Ссылка на источник').fill('https://example.org/project');
+    await form.getByLabel('Автор решения').fill('Проверяющий');
+    await form.getByRole('button').click();
+    await expect(page.getByRole('heading', { name: 'Проверка реального потока', exact: true })).toBeVisible();
+    const url = page.url();
+    await expect(page.locator('.detail-score')).toContainText('0');
+    await expect(page.locator('.project-facts')).toContainText('Не установлен');
+    await page.getByText('R6 · Простой или просрочка', { exact: true }).click();
+    const review = page.getByRole('form', { name: 'Сохранить проверку R6', exact: true });
+    await review.getByLabel('Источник материала').fill('Акт');
+    await review.getByLabel('Ссылка на материал').fill('https://example.org/act');
+    await review.getByLabel('Дата материала').fill('2026-01-01');
+    await review.getByLabel('Вывод проверки').fill('Срок нарушен, проверено по документам.');
+    await review.getByRole('checkbox').check();
+    await review.getByLabel('Автор решения').fill('Проверяющий');
+    await review.getByRole('button').click();
+    await expect(page.locator('.detail-score')).toContainText('5');
+    const db = (await openDatabase(process.env.SAQ_E2E_DB!));
+    try {
+        (await db.prepare("INSERT INTO collected_posts VALUES ('post-flow','tiktok','flow','https://www.tiktok.com/@fixture/video/123','ЖК Проверка реального потока. Продажа квартир в строящемся доме. Внесите депозит 300 000 ₸.','fixture','2026-01-01',0,'2026-01-02','2026-01-02',0)").run());
+    }
+    finally {
+        db.close();
+    }
+    await page.goto('/monitoring');
+    await expect(page.locator('[aria-label="Качество выдачи"]')).toContainText('С признаками R2/R3: 1');
+    await expect(page.locator('.project-matches')).toContainText('Совпадения названия ЖК: 1');
+    await page.getByText('Привязать к объекту', { exact: true }).click();
+    const link = page.getByRole('form', { name: 'Привязать публикацию', exact: true });
+    await link.getByRole('combobox', { name: 'Объект', exact: true }).selectOption(url.split('/').pop()!);
+    await link.getByRole('checkbox').check();
+    await link.getByLabel('Автор решения').fill('Проверяющий');
+    await link.getByRole('button').click();
+    await expect(page.locator('.publication-card')).toContainText('Продажа квартир в строящемся доме. Внесите депозит 300 000 ₸.');
+    await expect(page.locator('.detail-score')).toContainText('5');
+    await expect(page.locator('.publication-card .ad-score')).toContainText('35 / 35');
+    await page.getByText('Сохранить найденные признаки как гипотезы', { exact: true }).click();
+    const rules = page.getByRole('form', { name: 'Сохранить гипотезы по правилам', exact: true });
+    await rules.getByLabel('Автор решения').fill('Аналитик');
+    await rules.getByRole('button').click();
+    await expect(page.locator('.hypothesis')).toHaveCount(2);
+    await expect(page.locator('.detail-score')).toContainText('5');
+    const r2 = page.locator('.hypothesis').filter({ has: page.getByRole('heading', { name: /^R2 ·/ }) });
+    await r2.getByRole('combobox', { name: 'Решение', exact: true }).selectOption('confirmed');
+    await r2.getByLabel('Автор решения').fill('Аналитик');
+    await r2.getByRole('button').click();
+    await expect(page.locator('.detail-score')).toContainText('30');
+    await page.goto('/?q=' + encodeURIComponent('Проверка реального потока'));
+    await expect(page.locator('.project-marker')).toHaveCount(1);
+    await page.locator('.project-marker').click();
+    await expect(page.locator('.leaflet-popup')).toContainText('30 / 100');
+    await page.getByRole('link', { name: 'Открыть карточку →' }).click();
+    await expect(page).toHaveURL(url);
+    await page.goto("/projects/new");
+    await expect(page.locator("input[name=requestId]")).not.toHaveValue(firstRequestId);
+});
