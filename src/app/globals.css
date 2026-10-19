@@ -198,3 +198,7 @@ summary { cursor: pointer; padding: 8px 0; color: var(--accent); }
 .feed-summary{display:flex;flex-wrap:wrap;gap:10px 20px;padding:16px;background:#edf3f2;border-radius:10px}.project-matches{margin:16px 0}.project-matches li{margin:8px 0;overflow-wrap:anywhere}
 
 .session-user { display:flex; align-items:center; gap:12px; font-size:13px; }
+.drone-photos { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:16px; }
+.drone-photos figure { margin:0; min-width:0; }
+.drone-photos img { width:100%; height:auto; max-height:450px; object-fit:contain; background:#eef2f6; }
+.drone-photos figcaption { overflow-wrap:anywhere; font-size:13px; padding:8px 0; }
