@@ -3,7 +3,7 @@ import { authEnabled, sessionUser } from './server/auth/core';
 import { databasePath, openDatabase } from './server/db/connection';
 export async function proxy(request: NextRequest) {
     const path = request.nextUrl.pathname;
-    if (['/api/liveness','/api/cron/collect','/api/webhooks/apify'].includes(path))
+    if (['/api/liveness','/api/cron/collect','/api/webhooks/apify','/api/webhooks/telegram'].includes(path))
         return NextResponse.next();
     if (process.env.APP_ENV === 'production' && (process.env.SAQ_AUTH_MODE === 'local' || process.env.SAQ_DEMO_MODE === '1'))
         return new NextResponse('Invalid production configuration', { status: 503 });
