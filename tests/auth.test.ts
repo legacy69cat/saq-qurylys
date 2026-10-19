@@ -42,3 +42,12 @@ it('enforces permission matrix and cannot disable auth in production', () => {
     vi.stubEnv('SAQ_AUTH_MODE', 'local');
     expect(authEnabled()).toBe(true);
 });
+
+it('login cleanup preserves Telegram deduplication records', async () => {
+    await createUser(db, account);
+    await db.prepare('INSERT INTO auth_throttle VALUES(?,1,?)').run('telegram:update:42', 1000);
+    await db.prepare('INSERT INTO auth_throttle VALUES(?,1,?)').run('expired-login', 1000);
+    await login(db, account.username, account.password, 2000);
+    expect(await db.prepare('SELECT attempts FROM auth_throttle WHERE key=?').get('telegram:update:42')).toEqual({attempts:1});
+    expect(await db.prepare('SELECT attempts FROM auth_throttle WHERE key=?').get('expired-login')).toBeUndefined();
+});

@@ -55,7 +55,7 @@ export async function login(db: DatabaseSync, usernameInput: unknown, passwordIn
     // Shared persistent limits cannot be bypassed with forged client IP headers.
     (await db.exec('BEGIN IMMEDIATE'));
     try {
-        (await db.prepare('DELETE FROM auth_throttle WHERE reset_at<=?').run(at));
+        (await db.prepare("DELETE FROM auth_throttle WHERE reset_at<=? AND key NOT LIKE 'telegram:%'").run(at));
         (await throttle(db, 'all', 60, at));
         (await throttle(db, hashToken(username), 10, at));
         (await db.exec('COMMIT'));
