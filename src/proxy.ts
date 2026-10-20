@@ -33,6 +33,10 @@ export async function proxy(request: NextRequest) {
     }
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'private, no-store');
+    const mode = request.nextUrl.searchParams.get('simulation');
+    if (path === '/' && (mode === '0' || mode === '1') && !request.headers.has('next-router-prefetch') && request.headers.get('purpose') !== 'prefetch') {
+        response.cookies.set('saq_score_mode', mode, {httpOnly:true, sameSite:'lax', secure:process.env.APP_ENV === 'production', path:'/', maxAge:86400 * 7});
+    }
     return response;
 }
 export const config = { matcher: ['/((?!_next/static|_next/image|icon.svg|favicon.ico).*)'] };

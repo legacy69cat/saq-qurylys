@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { simulatedRisk } from "@/domain/risk-simulation";
 import { requireAccess } from "@/server/auth/access";
 import Link from "next/link";
@@ -20,7 +21,7 @@ export default async function Home({ searchParams }: {
 }) {
     await requireAccess();
     const params = await searchParams;
-    const simulation = params.simulation === "1";
+    const simulation = params.simulation === "1" || (params.simulation !== "0" && (await cookies()).get("saq_score_mode")?.value === "1");
     const q = typeof params.q === "string" ? params.q.slice(0, 200).trim() : "";
     const zone = typeof params.zone === "string" && ["green", "yellow", "red"].includes(params.zone) ? params.zone as Zone : "";
     let projects: Project[];
@@ -46,8 +47,8 @@ export default async function Home({ searchParams }: {
     const count = (value: Zone) => projects.filter((project) => project.risk.zone === value).length;
     return (<main id="main" className="page">
       <div className="page-title"><div><h1>Обзор строительства</h1><p>Усть-Каменогорск · Приоритеты проверки</p></div><Link href="/projects/new" className="primary-link">+ Добавить объект</Link></div>
-      <nav aria-label="Режим скоринга" className="score-modes"><Link href="/" aria-current={!simulation ? "page" : undefined}>Фактические данные</Link><Link href="/?simulation=1" aria-current={simulation ? "page" : undefined}>Симуляция</Link></nav>
-      <p>{simulation ? <><strong>Симуляция скоринга.</strong> Реальные объекты, условные факторы и баллы. <Link href="/">Вернуться к фактическим данным</Link></> : <Link href="/?simulation=1">Симуляция скоринга на карте →</Link>}</p>
+      <nav aria-label="Режим скоринга" className="score-modes"><a href="/?simulation=0" aria-current={!simulation ? "page" : undefined}>Фактические данные</a><a href="/?simulation=1" aria-current={simulation ? "page" : undefined}>Симуляция</a></nav>
+      <p>{simulation ? <><strong>Симуляция скоринга.</strong> Реальные объекты, условные факторы и баллы. <a href="/?simulation=0">Вернуться к фактическим данным</a></> : <a href="/?simulation=1">Симуляция скоринга на карте →</a>}</p>
       <div className="dashboard-metrics"><article><span>Объектов</span><strong>{projects.length}</strong></article><article><span>Нужна проверка</span><strong>{projects.filter(p => p.risk.needsReview).length}</strong></article><article><Link href="/monitoring">Публикации</Link><strong>{String(totals.publications)}</strong></article><article><span>Сигналов на рассмотрении</span><strong>{String(totals.signals)}</strong></article></div>
       <div className="summary-line" aria-label="Распределение объектов по зонам">
         <span><i className="risk-dot red"/>Красная <strong>{count("red")}</strong></span>
@@ -64,7 +65,7 @@ export default async function Home({ searchParams }: {
       </form>
       <ProjectMap simulation={simulation} projects={filtered.filter(p => p.stage === 'construction').map(p => ({ id: p.id, name: p.name, address: p.address, latitude: p.latitude, longitude: p.longitude, score: p.risk.score, zone: p.risk.zone, needsReview: p.risk.needsReview, isDemo: p.isDemo }))}/>
       <p className="map-caption">Отметки — координаты из источников.{filtered.some(p => p.isDemo) ? " Для вымышленных ЖК показаны условные точки." : ""} Серый маркер: оценка ещё не подтверждена. {filtered.filter(p => p.latitude === null || p.longitude === null).length ? `${filtered.filter(p => p.latitude === null || p.longitude === null).length} объектов без координат показаны только в списке.` : ""}</p>
-      <div className="list-heading"><h2>Объекты по приоритету</h2><span aria-live="polite">Показано {filtered.length} из {projects.length}</span></div>
+      <div className="list-heading"><h2>{simulation ? "Объекты по сценарному скорингу" : "Объекты по приоритету"}</h2><span aria-live="polite">Показано {filtered.length} из {projects.length}</span></div>
       {filtered.length ? <div className="table-wrap"><table>
         <thead><tr><th scope="col">Жилой комплекс</th><th scope="col">Балл</th><th scope="col">Зона риска</th><th scope="col">{simulation ? "Сценарные факторы" : "Подтверждённые факторы"}</th><th scope="col">Проверка данных</th></tr></thead>
         <tbody>{filtered.map((project) => <tr key={project.id}>

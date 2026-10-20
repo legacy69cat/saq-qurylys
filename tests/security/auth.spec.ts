@@ -13,6 +13,11 @@ test('anonymous access, invalid login, authenticated API and revoked session', a
     await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible();
     await expect(page).toHaveURL(/\/\?simulation=1$/);
     await expect(page.getByRole('navigation', {name:'Режим скоринга'})).toBeVisible();
+    await page.getByRole('link', {name:'Обзор',exact:true}).click();
+    await expect(page.getByRole('link', {name:'Симуляция',exact:true})).toHaveAttribute('aria-current','page');
+    await page.getByRole('link', {name:'Фактические данные',exact:true}).click();
+    await page.getByRole('link', {name:'Обзор',exact:true}).click();
+    await expect(page.getByRole('link', {name:'Фактические данные',exact:true})).toHaveAttribute('aria-current','page');
     expect((await page.request.get('/api/projects')).status()).toBe(200);
     const session = (await page.context().cookies()).find(c => c.name === 'saq_session')!;
     expect(session.httpOnly).toBe(true);
