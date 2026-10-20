@@ -32,6 +32,7 @@ export default async function ProjectPage({ params }: {
         db.close();
     } })();
     return <main id="main" className="page detail-page">
+    {project.isDemo?<p className="notice">Демонстрационный объект. Все сведения вымышлены.</p>:null}
     <Link href="/" className="back-link">Вернуться в реестр</Link>
     <div className="page-title"><div><h1>{project.name}</h1><p>{project.address}</p></div><div className="detail-score"><strong>{project.risk.score}<small> / 100</small></strong>{project.risk.score === 0 && project.risk.needsReview ? <span className="risk-badge unknown">Не проверено</span> : <RiskBadge zone={project.risk.zone}/>}</div></div>
     {project.source ? <p className="evidence-meta">Источник: <a href={project.source.url} target="_blank" rel="noreferrer">{project.source.source} ↗</a> · {date(project.source.capturedAt)}. Стадия и координаты указаны по источнику.</p> : null}

@@ -24,7 +24,10 @@
     "db:import": "node --import tsx --env-file-if-exists=.env.local scripts/import-projects.ts",
     "test:auth": "playwright test -c playwright.auth.config.ts",
     "users": "node --import tsx --env-file-if-exists=.env.local scripts/users.ts",
-    "telegram:setup": "node --import tsx --env-file-if-exists=.env.local scripts/setup-telegram.ts"
+    "telegram:setup": "node --import tsx --env-file-if-exists=.env.local scripts/setup-telegram.ts",
+    "demo": "node --import tsx --env-file-if-exists=.env.local scripts/case-demo.ts",
+    "verify:case": "node --import tsx scripts/case-demo.ts --verify",
+    "test:case:live": "node --env-file-if-exists=.env.local node_modules/@playwright/test/cli.js test -c playwright.case.config.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

@@ -23,6 +23,7 @@ export default async function RootLayout({ children }: Readonly<{
           <nav aria-label="Основная навигация"><Link href="/">Обзор</Link><Link href="/monitoring">Мониторинг</Link><Link href="/check">Проверить объявление</Link><Link href="/drone">Снимки с дрона</Link><Link href="/analyst-guide">Как работать</Link><Link href="/sources">Источники РК</Link></nav>
           {user ? <div className="session-user"><span>{user.name}</span><form action={logoutAction}><button type="submit">Выйти</button></form></div> : null}
         </header>
+        {process.env.SAQ_DEMO_MODE==='1'?<aside className="notice" aria-label="Демонстрационный режим">Демонстрационные данные: все объекты, застройщики, адреса и нарушения вымышлены. Не использовать для реальных решений.</aside>:null}
         {children}
         <footer className="app-footer">SAQ QURYLYS <span>Мониторинг строительства</span></footer>
       </body>

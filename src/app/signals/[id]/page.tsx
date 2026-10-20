@@ -37,6 +37,7 @@ export default async function SignalPage({ params }: {
     const { signal, stale } = data;
     const project = JSON.parse(signal.snapshot) as Project;
     return <main id="main" className="page detail-page signal-page">
+    {project.isDemo?<p className="notice">ДЕМОНСТРАЦИОННЫЙ СИГНАЛ. Вымышленные данные, не использовать для реальных решений.</p>:null}
     <Link className="back-link no-print" href={`/projects/${project.id}`}>Вернуться к ЖК</Link>
     <div className="page-title"><div><h1>Сигнальная карточка</h1><p>{project.name} · Версия {signal.version}</p></div><PrintButton /></div>
     <p className="notice">Сигнал определяет приоритет проверки и не устанавливает факт нарушения. Автоматическая отправка в государственные органы не выполняется.</p>
