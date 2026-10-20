@@ -23,6 +23,8 @@ export async function loginAction(_: ActionState, form: FormData): Promise<Actio
         db.close();
     }
     (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, secure: process.env.APP_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_SECONDS });
+    const mode = new URL(next, 'https://saq.invalid').searchParams.get('simulation');
+    if (mode === '0' || mode === '1') (await cookies()).set('saq_score_mode', mode, {httpOnly:true, secure:process.env.APP_ENV === 'production', sameSite:'lax', path:'/', maxAge:86400 * 7});
     redirect(next);
 }
 export async function logoutAction() {
