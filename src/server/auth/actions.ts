@@ -1,4 +1,5 @@
 'use server';
+import { safeReturnPath } from '../../domain/return-path';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { InputError } from '../../domain/analysis';
@@ -7,8 +8,9 @@ import { login, logout, SESSION_SECONDS, authEnabled } from './core';
 import { SESSION_COOKIE } from './access';
 import type { ActionState } from '../actions';
 export async function loginAction(_: ActionState, form: FormData): Promise<ActionState> {
+    const next = safeReturnPath(form.get('next'));
     if (!authEnabled())
-        redirect('/');
+        redirect(next);
     const db = (await openDatabase(databasePath()));
     let token: string;
     try {
@@ -21,7 +23,7 @@ export async function loginAction(_: ActionState, form: FormData): Promise<Actio
         db.close();
     }
     (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, secure: process.env.APP_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_SECONDS });
-    redirect('/');
+    redirect(next);
 }
 export async function logoutAction() {
     const jar = await cookies();

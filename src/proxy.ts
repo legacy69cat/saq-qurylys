@@ -25,8 +25,12 @@ export async function proxy(request: NextRequest) {
             return new NextResponse('Service unavailable', { status: 503 });
         }
     }
-    if (!user)
-        return path.startsWith('/api/') ? NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 }) : NextResponse.redirect(new URL('/login', request.url));
+    if (!user) {
+        if (path.startsWith('/api/')) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+        const destination = new URL('/login', request.url);
+        destination.searchParams.set('next', path + request.nextUrl.search);
+        return NextResponse.redirect(destination);
+    }
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'private, no-store');
     return response;

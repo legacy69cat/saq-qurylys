@@ -46,6 +46,7 @@ export default async function Home({ searchParams }: {
     const count = (value: Zone) => projects.filter((project) => project.risk.zone === value).length;
     return (<main id="main" className="page">
       <div className="page-title"><div><h1>Обзор строительства</h1><p>Усть-Каменогорск · Приоритеты проверки</p></div><Link href="/projects/new" className="primary-link">+ Добавить объект</Link></div>
+      <nav aria-label="Режим скоринга" className="score-modes"><Link href="/" aria-current={!simulation ? "page" : undefined}>Фактические данные</Link><Link href="/?simulation=1" aria-current={simulation ? "page" : undefined}>Симуляция</Link></nav>
       <p>{simulation ? <><strong>Симуляция скоринга.</strong> Реальные объекты, условные факторы и баллы. <Link href="/">Вернуться к фактическим данным</Link></> : <Link href="/?simulation=1">Симуляция скоринга на карте →</Link>}</p>
       <div className="dashboard-metrics"><article><span>Объектов</span><strong>{projects.length}</strong></article><article><span>Нужна проверка</span><strong>{projects.filter(p => p.risk.needsReview).length}</strong></article><article><Link href="/monitoring">Публикации</Link><strong>{String(totals.publications)}</strong></article><article><span>Сигналов на рассмотрении</span><strong>{String(totals.signals)}</strong></article></div>
       <div className="summary-line" aria-label="Распределение объектов по зонам">

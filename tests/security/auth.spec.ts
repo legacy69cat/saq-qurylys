@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 test('anonymous access, invalid login, authenticated API and revoked session', async ({ page, request }) => {
     expect((await request.get('/api/projects')).status()).toBe(401);
-    await page.goto('/monitoring');
-    await expect(page).toHaveURL(/\/login$/);
+    await page.goto('/?simulation=1');
+    await expect(page).toHaveURL(/\/login\?next=/);
     await page.getByLabel('Логин', { exact: true }).fill('analyst');
     await page.getByLabel('Пароль', { exact: true }).fill('incorrect');
     await page.getByRole('button', { name: 'Войти', exact: true }).click();
@@ -11,6 +11,8 @@ test('anonymous access, invalid login, authenticated API and revoked session', a
     await page.getByLabel('Пароль', { exact: true }).fill('isolated-test-password-123');
     await page.getByRole('button', { name: 'Войти', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible();
+    await expect(page).toHaveURL(/\/\?simulation=1$/);
+    await expect(page.getByRole('navigation', {name:'Режим скоринга'})).toBeVisible();
     expect((await page.request.get('/api/projects')).status()).toBe(200);
     const session = (await page.context().cookies()).find(c => c.name === 'saq_session')!;
     expect(session.httpOnly).toBe(true);

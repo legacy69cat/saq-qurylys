@@ -202,3 +202,7 @@ summary { cursor: pointer; padding: 8px 0; color: var(--accent); }
 .drone-photos figure { margin:0; min-width:0; }
 .drone-photos img { width:100%; height:auto; max-height:450px; object-fit:contain; background:#eef2f6; }
 .drone-photos figcaption { overflow-wrap:anywhere; font-size:13px; padding:8px 0; }
+
+.score-modes { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.score-modes a { border:1px solid #9bb3b8; border-radius:8px; padding:10px 18px; text-decoration:none; font-weight:600; }
+.score-modes a[aria-current="page"] { background:#185c64; color:white; border-color:#185c64; }
