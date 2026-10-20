@@ -1,3 +1,4 @@
+import { simulatedRisk } from "@/domain/risk-simulation";
 import { checkRegistryAction } from "@/server/registries/actions";
 import { ActionForm } from "@/components/action-form";
 import { AuthorField } from "@/components/workflow-forms";
@@ -17,7 +18,8 @@ export const runtime = "nodejs";
 const date = (value: string) => new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Almaty" }).format(new Date(value));
 const basisNames = { unknown: "Не установлено", none: "Отсутствие подтверждено", guarantee: "Гарантия Единого оператора", mio_permission: "Разрешение МИО", other: "Иное основание" };
 const statusNames = { unknown: "Нужна проверка", present: "Подтверждено", absent: "Отсутствие подтверждено" };
-export default async function ProjectPage({ params }: {
+export default async function ProjectPage({ params, searchParams }: {
+    searchParams: Promise<{simulation?:string}>;
     params: Promise<{
         id: string;
     }>;
@@ -27,6 +29,10 @@ export default async function ProjectPage({ params }: {
     const project = (await getProjects()).find((item) => item.id === id);
     if (!project)
         notFound();
+    if ((await searchParams).simulation === '1' && !project.isDemo) {
+        const risk = simulatedRisk(project.id);
+        return <main id="main" className="page detail-page"><Link href="/?simulation=1">Вернуться к симуляции</Link><h1>{project.name}</h1><p>{project.address}</p><p className="notice">Симуляция скоринга. Факторы ниже условные и не являются сведениями о нарушениях этого ЖК. Расчёт не сохраняется в документы объекта.</p><div className="detail-score"><strong>{risk.score}<small> / 100</small></strong><RiskBadge zone={risk.zone}/></div><h2>Условия сценария</h2><div className="factor-list">{risk.factors.map(f=><div className="factor-row" key={f.code}><span>{f.code}</span><div><h3>{f.title}</h3><p>{f.reason}</p></div><strong>+{f.points}</strong></div>)}</div><p>Фактический подтверждённый балл: {project.risk.score} / 100.</p><Link href={`/projects/${id}`}>Открыть фактические данные объекта →</Link></main>;
+    }
     const db = (await openDatabase(databasePath(), { readOnly: true }));
     const workflow = await (async () => { try {
         return (await workflowForProject(db, id));

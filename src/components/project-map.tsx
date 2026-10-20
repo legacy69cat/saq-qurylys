@@ -12,9 +12,10 @@ export type MapProject = {
     needsReview: boolean;
     isDemo?: boolean;
 };
-export function ProjectMap({ projects, preview = false }: {
+export function ProjectMap({ projects, preview = false, simulation = false }: {
     projects: MapProject[];
     preview?: boolean;
+    simulation?: boolean;
 }) {
     const element = useRef<HTMLDivElement>(null);
     const [error, setError] = useState(false);
@@ -52,9 +53,9 @@ export function ProjectMap({ projects, preview = false }: {
                 const address = document.createElement('p');
                 address.textContent = p.isDemo ? `Условная точка вымышленного ЖК. ${p.address}` : p.address;
                 const score = document.createElement('p');
-                score.textContent = `${p.score} / 100${p.needsReview ? ' · Нужна проверка' : ''}`;
+                score.textContent = `${simulation ? "Сценарий: " : ""}${p.score} / 100${p.needsReview ? ' · Нужна проверка' : ''}`;
                 const link = document.createElement('a');
-                link.href = `/projects/${encodeURIComponent(p.id)}`;
+                link.href = `/projects/${encodeURIComponent(p.id)}${simulation ? "?simulation=1" : ""}`;
                 link.textContent = 'Открыть карточку →';
                 popup.append(title, address);
                 if (!preview)
@@ -68,6 +69,6 @@ export function ProjectMap({ projects, preview = false }: {
         }).catch(() => { if (!cancelled)
             setError(true); });
         return () => { cancelled = true; observer?.disconnect(); map?.remove(); };
-    }, [projects, preview]);
+    }, [projects, preview, simulation]);
     return <div className="map-shell"><div ref={element} className="project-map" role="region" aria-label="Карта строящихся объектов"/>{error ? <p className="map-error" role="status">Подложка карты недоступна. Карточки объектов доступны в списке.</p> : null}<div className="map-legend"><span><i className="risk-dot unknown"/>Не проверено</span><span><i className="risk-dot green"/>0–24</span><span><i className="risk-dot yellow"/>25+</span><span><i className="risk-dot red"/>60+ и R1+R2</span></div></div>;
 }

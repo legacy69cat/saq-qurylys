@@ -1,3 +1,4 @@
+import { simulatedRisk } from "@/domain/risk-simulation";
 import { requireAccess } from "@/server/auth/access";
 import Link from "next/link";
 import { ProjectMap } from "@/components/project-map";
@@ -14,15 +15,18 @@ export default async function Home({ searchParams }: {
     searchParams: Promise<{
         q?: string;
         zone?: string;
+        simulation?: string;
     }>;
 }) {
     await requireAccess();
     const params = await searchParams;
+    const simulation = params.simulation === "1";
     const q = typeof params.q === "string" ? params.q.slice(0, 200).trim() : "";
     const zone = typeof params.zone === "string" && ["green", "yellow", "red"].includes(params.zone) ? params.zone as Zone : "";
     let projects: Project[];
     try {
         projects = (await getProjects());
+        if (simulation) projects = projects.filter(p => !p.isDemo).map(p => ({...p,risk:simulatedRisk(p.id)}));
     }
     catch (error) {
         if (!(error instanceof DatabaseNotReadyError))
@@ -42,6 +46,7 @@ export default async function Home({ searchParams }: {
     const count = (value: Zone) => projects.filter((project) => project.risk.zone === value).length;
     return (<main id="main" className="page">
       <div className="page-title"><div><h1>Обзор строительства</h1><p>Усть-Каменогорск · Приоритеты проверки</p></div><Link href="/projects/new" className="primary-link">+ Добавить объект</Link></div>
+      <p>{simulation ? <><strong>Симуляция скоринга.</strong> Реальные объекты, условные факторы и баллы. <Link href="/">Вернуться к фактическим данным</Link></> : <Link href="/?simulation=1">Симуляция скоринга на карте →</Link>}</p>
       <div className="dashboard-metrics"><article><span>Объектов</span><strong>{projects.length}</strong></article><article><span>Нужна проверка</span><strong>{projects.filter(p => p.risk.needsReview).length}</strong></article><article><Link href="/monitoring">Публикации</Link><strong>{String(totals.publications)}</strong></article><article><span>Сигналов на рассмотрении</span><strong>{String(totals.signals)}</strong></article></div>
       <div className="summary-line" aria-label="Распределение объектов по зонам">
         <span><i className="risk-dot red"/>Красная <strong>{count("red")}</strong></span>
@@ -50,22 +55,23 @@ export default async function Home({ searchParams }: {
         <span className="summary-note">Балл определяет приоритет проверки, а не факт нарушения.</span>
       </div>
       <form className="filters" action="/">
+        {simulation ? <input type="hidden" name="simulation" value="1"/> : null}
         <div className="search-field"><label htmlFor="q">Поиск ЖК или застройщика</label><input id="q" name="q" type="search" defaultValue={q} placeholder="Название или адрес" maxLength={200}/></div>
         <div><label htmlFor="zone">Зона риска</label><select id="zone" name="zone" defaultValue={zone}><option value="">Все зоны</option>{Object.entries(ZONE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
         <button type="submit">Найти</button>
-        {q || zone ? <Link href="/" className="reset-link">Сбросить</Link> : null}
+        {q || zone ? <Link href={simulation ? "/?simulation=1" : "/"} className="reset-link">Сбросить</Link> : null}
       </form>
-      <ProjectMap projects={filtered.filter(p => p.stage === 'construction').map(p => ({ id: p.id, name: p.name, address: p.address, latitude: p.latitude, longitude: p.longitude, score: p.risk.score, zone: p.risk.zone, needsReview: p.risk.needsReview, isDemo: p.isDemo }))}/>
+      <ProjectMap simulation={simulation} projects={filtered.filter(p => p.stage === 'construction').map(p => ({ id: p.id, name: p.name, address: p.address, latitude: p.latitude, longitude: p.longitude, score: p.risk.score, zone: p.risk.zone, needsReview: p.risk.needsReview, isDemo: p.isDemo }))}/>
       <p className="map-caption">Отметки — координаты из источников.{filtered.some(p => p.isDemo) ? " Для вымышленных ЖК показаны условные точки." : ""} Серый маркер: оценка ещё не подтверждена. {filtered.filter(p => p.latitude === null || p.longitude === null).length ? `${filtered.filter(p => p.latitude === null || p.longitude === null).length} объектов без координат показаны только в списке.` : ""}</p>
       <div className="list-heading"><h2>Объекты по приоритету</h2><span aria-live="polite">Показано {filtered.length} из {projects.length}</span></div>
       {filtered.length ? <div className="table-wrap"><table>
-        <thead><tr><th scope="col">Жилой комплекс</th><th scope="col">Балл</th><th scope="col">Зона риска</th><th scope="col">Подтверждённые факторы</th><th scope="col">Проверка данных</th></tr></thead>
+        <thead><tr><th scope="col">Жилой комплекс</th><th scope="col">Балл</th><th scope="col">Зона риска</th><th scope="col">{simulation ? "Сценарные факторы" : "Подтверждённые факторы"}</th><th scope="col">Проверка данных</th></tr></thead>
         <tbody>{filtered.map((project) => <tr key={project.id}>
-          <td><Link className="project-link" href={`/projects/${project.id}`}>{project.name}<svg aria-hidden="true" viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.5"/></svg></Link><span className="cell-secondary">{project.developer}</span></td>
+          <td><Link className="project-link" href={`/projects/${project.id}${simulation ? "?simulation=1" : ""}`}>{project.name}<svg aria-hidden="true" viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.5"/></svg></Link><span className="cell-secondary">{project.developer}</span></td>
           <td><span className="score">{project.risk.score}</span><span className="score-max"> / 100</span></td>
           <td>{project.risk.score === 0 && project.risk.needsReview ? <span className="risk-badge unknown">Не проверено</span> : <RiskBadge zone={project.risk.zone}/>}</td>
           <td><span className="factor-codes">{project.risk.factors.filter((factor) => factor.counted).map((factor) => factor.code).join(" · ") || "Нет"}</span><span className="cell-secondary">{project.publications.length} публ.</span></td>
-          <td>{project.risk.needsReview ? <span className="needs-review">Нужна проверка</span> : <span>Источники сохранены</span>}</td>
+          <td>{simulation ? <span>Условный расчёт</span> : project.risk.needsReview ? <span className="needs-review">Нужна проверка</span> : <span>Источники сохранены</span>}</td>
         </tr>)}</tbody>
       </table></div> : <div className="empty-state"><h3>{projects.length ? "Объекты не найдены" : "Реестр пока пуст"}</h3><p>{projects.length ? "Измените запрос или сбросьте фильтры." : "Добавьте объект с адресом и ссылкой на источник."}</p>{projects.length ? <Link href="/">Показать все объекты</Link> : null}</div>}
       <details className="rules"><summary>Как рассчитывается риск</summary><p>Учитываются только подтверждённые факторы с источником, автором и датой проверки. Неизвестные сведения и гипотезы дают 0 баллов.</p><ul>{Object.entries(FACTOR_RULES).map(([code, rule]) => <li key={code}>{code} · {rule.title} — {rule.weight} баллов</li>)}</ul><p>Зелёная зона: 0–24. Жёлтая: 25–59 и 60+ без сочетания R1 и R2. Красная: от 60, если одновременно подтверждены отсутствие правового основания (R1) и предложение внести деньги (R2).</p></details>
