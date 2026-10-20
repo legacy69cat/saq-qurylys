@@ -55,8 +55,8 @@ export default async function Home({ searchParams }: {
         <button type="submit">Найти</button>
         {q || zone ? <Link href="/" className="reset-link">Сбросить</Link> : null}
       </form>
-      <ProjectMap projects={filtered.filter(p => p.stage === 'construction').map(p => ({ id: p.id, name: p.name, address: p.address, latitude: p.latitude, longitude: p.longitude, score: p.risk.score, zone: p.risk.zone, needsReview: p.risk.needsReview }))}/>
-      <p className="map-caption">Отметки — координаты из источников. Серый маркер: оценка ещё не подтверждена. {filtered.filter(p => p.latitude === null || p.longitude === null).length ? `${filtered.filter(p => p.latitude === null || p.longitude === null).length} объектов без координат показаны только в списке.` : ""}</p>
+      <ProjectMap projects={filtered.filter(p => p.stage === 'construction').map(p => ({ id: p.id, name: p.name, address: p.address, latitude: p.latitude, longitude: p.longitude, score: p.risk.score, zone: p.risk.zone, needsReview: p.risk.needsReview, isDemo: p.isDemo }))}/>
+      <p className="map-caption">Отметки — координаты из источников.{filtered.some(p => p.isDemo) ? " Для вымышленных ЖК показаны условные точки." : ""} Серый маркер: оценка ещё не подтверждена. {filtered.filter(p => p.latitude === null || p.longitude === null).length ? `${filtered.filter(p => p.latitude === null || p.longitude === null).length} объектов без координат показаны только в списке.` : ""}</p>
       <div className="list-heading"><h2>Объекты по приоритету</h2><span aria-live="polite">Показано {filtered.length} из {projects.length}</span></div>
       {filtered.length ? <div className="table-wrap"><table>
         <thead><tr><th scope="col">Жилой комплекс</th><th scope="col">Балл</th><th scope="col">Зона риска</th><th scope="col">Подтверждённые факторы</th><th scope="col">Проверка данных</th></tr></thead>

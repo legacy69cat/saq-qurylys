@@ -13,7 +13,7 @@ const db=await openDatabase(path,{create:true});
 try{
  await migrate(db);await seedDemo(db);const projects=await listProjects(db);
  const cases=[['demo-a',35,'yellow'],['demo-b',70,'red'],['demo-c',10,'green']] as const;
- if(projects.length<8||projects.reduce((n,p)=>n+p.publications.length,0)<12||projects.some(p=>!p.isDemo))throw new Error('Incomplete demo dataset');
+ if(projects.length<8||projects.reduce((n,p)=>n+p.publications.length,0)<12||projects.some(p=>!p.isDemo||p.latitude===null||p.longitude===null))throw new Error('Incomplete demo dataset');
  for(const [id,score,zone] of cases){const p=projects.find(p=>p.id===id);if(!p||p.risk.score!==score||p.risk.zone!==zone)throw new Error(`Case ${id} failed`);}
  console.log(JSON.stringify({demo:true,projects:projects.length,publications:projects.reduce((n,p)=>n+p.publications.length,0),cases:cases.map(([id,score,zone])=>({id,score,zone})),liveAI:live}));
 }catch(e){rmSync(folder,{recursive:true,force:true});throw e;}finally{db.close();}

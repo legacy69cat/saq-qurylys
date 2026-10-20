@@ -10,6 +10,7 @@ export type MapProject = {
     score: number;
     zone: string;
     needsReview: boolean;
+    isDemo?: boolean;
 };
 export function ProjectMap({ projects, preview = false }: {
     projects: MapProject[];
@@ -49,7 +50,7 @@ export function ProjectMap({ projects, preview = false }: {
                 const title = document.createElement('strong');
                 title.textContent = p.name;
                 const address = document.createElement('p');
-                address.textContent = p.address;
+                address.textContent = p.isDemo ? `Условная точка вымышленного ЖК. ${p.address}` : p.address;
                 const score = document.createElement('p');
                 score.textContent = `${p.score} / 100${p.needsReview ? ' · Нужна проверка' : ''}`;
                 const link = document.createElement('a');

@@ -55,6 +55,13 @@ export const DEMO_PROJECTS: DemoProject[] = [
         texts: ["ЖК Контур 08: планировки и ход строительства. Заявленная готовность — 69%."],
     },
 ];
+// Synthetic display positions; these are not real construction-site locations.
+export const DEMO_LOCATIONS: Record<string, [number, number]> = {
+    'demo-a': [49.976, 82.602], 'demo-b': [49.968, 82.638],
+    'demo-c': [49.957, 82.664], 'demo-d': [49.943, 82.676],
+    'demo-e': [49.929, 82.653], 'demo-f': [49.922, 82.619],
+    'demo-g': [49.940, 82.593], 'demo-h': [49.958, 82.583],
+};
 /** Inserts only missing demo records. Existing analyst edits are never overwritten. */
 export async function seedDemo(db: DatabaseSync): Promise<void> {
     (await db.exec("BEGIN IMMEDIATE"));
@@ -67,6 +74,9 @@ export async function seedDemo(db: DatabaseSync): Promise<void> {
                 .run(developerId, `Учебный застройщик ${index + 1}`, `DEMO-${String(index + 1).padStart(6, "0")}`));
             (await db.prepare("INSERT INTO projects (id, name, address, developer_id, stage, scenario, is_demo, created_at) VALUES (?, ?, ?, ?, 'construction', ?, 1, ?) ON CONFLICT(id) DO NOTHING")
                 .run(project.id, project.name, `Демонстрационный квартал, участок ${index + 1} (вымышленный адрес)`, developerId, project.scenario, date));
+            const [latitude, longitude] = DEMO_LOCATIONS[project.id];
+            await db.prepare("UPDATE projects SET latitude=?,longitude=? WHERE id=? AND is_demo=1 AND latitude IS NULL AND longitude IS NULL")
+                .run(latitude, longitude, project.id);
             const legalEvidence = `${project.id}-legal`;
             (await insertEvidence.run(legalEvidence, project.id, "legal", "Учебная справка о правовом основании", null, project.legal === "absent" ? "Демонстрационная проверка: отсутствие всех применимых оснований установлено аналитиком. Не является сведением из реального реестра."
                 : project.legal === "present" ? `Демонстрационная проверка: основание ${project.basis === "guarantee" ? "гарантия Единого оператора" : "разрешение МИО"} подтверждено. Реального запроса к реестру не было.`
