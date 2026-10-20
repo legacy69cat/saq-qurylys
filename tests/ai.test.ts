@@ -44,3 +44,35 @@ describe("Gateway adapter (mock transport, not live AI evaluation)", () => {
         }
     });
 });
+
+import {citationHasContext} from '../src/domain/analysis';
+describe('citation context',()=>{
+ it('rejects cut words and omitted negation on either side',()=>{
+  expect(citationHasContext('Не вносите депозит.', 'вносите депозит')).toBe(false);
+  expect(citationHasContext('Депозит не требуется.', 'Депозит')).toBe(false);
+  expect(citationHasContext('Без предоплаты бронируйте квартиру.', 'бронируйте квартиру')).toBe(false);
+  expect(citationHasContext('Брондау тегін.', 'Брондау')).toBe(false);
+  expect(citationHasContext('Бесплатная бронь.', 'платная бронь')).toBe(false);
+ });
+ it('accepts complete context and does not mix separate sentences',()=>{
+  expect(citationHasContext('Не вносите депозит.', 'Не вносите депозит.')).toBe(true);
+  expect(citationHasContext('Дом строится. Бронь бесплатно.', 'Дом строится.')).toBe(true);
+  expect(citationHasContext('Консультация бесплатно. Внесите депозит.', 'Внесите депозит.')).toBe(true);
+  expect(citationHasContext('Не вносите депозит. Вносите депозит.', 'Вносите депозит.')).toBe(true);
+ });
+ it('rejects empty or oversized input before spending on the provider',async()=>{
+  await expect(analyzeAdvertisement(' ', 'ЖК')).rejects.toThrow();
+  await expect(analyzeAdvertisement('x'.repeat(12001), 'ЖК')).rejects.toThrow();
+  expect(generate).not.toHaveBeenCalled();
+ });
+ it('rejects a real substring when the model removed a negation',async()=>{
+  generate.mockResolvedValue(result({summary:'Оплата',suggestions:[{code:'R2',quote:'вносите депозит',explanation:'Оплата',confidence:.99}]}));
+  await expect(analyzeAdvertisement('Не вносите депозит.', 'ЖК')).rejects.toThrow();
+ });
+});
+
+it('reports provider throttling without exposing raw provider errors or retrying',async()=>{
+ generate.mockRejectedValue(Object.assign(new Error('private provider detail'),{statusCode:429}));
+ await expect(analyzeAdvertisement('Объявление','ЖК')).rejects.toMatchObject({code:'rate_limit'});
+ expect(generate).toHaveBeenCalledTimes(1);
+});

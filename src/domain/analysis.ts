@@ -39,6 +39,22 @@ export function isoDate(value: unknown): string {
         throw new InputError("Дата не может быть в будущем.");
     return date.toISOString();
 }
+/** A literal substring can still hide negation or cut a word in half. */
+export function citationHasContext(text: string, quote: string): boolean {
+    let offset = text.indexOf(quote);
+    const letter = /[\p{L}\p{N}]/u;
+    while (offset >= 0) {
+        const before = text.slice(0, offset), after = text.slice(offset + quote.length);
+        const cutsWord = (letter.test(quote[0]) && letter.test(before.slice(-1))) ||
+            (letter.test(quote.slice(-1)) && letter.test(after.slice(0, 1)));
+        const prefix = before.split(/[.!?;\n]/u).at(-1) || '';
+        const suffix = /[.!?;\n]$/u.test(quote) ? '' : after.split(/[.!?;\n]/u)[0];
+        const negative = /(?:^|[^\p{L}])(?:не|нет|без|никаких|нельзя|жоқ|емес)(?=$|[^\p{L}])|бесплатн|тегін/iu;
+        if (!cutsWord && !negative.test(prefix) && !negative.test(suffix)) return true;
+        offset = text.indexOf(quote, offset + 1);
+    }
+    return false;
+}
 export function parseAnalysis(value: unknown, text: string): Analysis {
     if (!value || typeof value !== "object")
         throw new InputError("ИИ вернул некорректный результат.");
@@ -57,6 +73,8 @@ export function parseAnalysis(value: unknown, text: string): Analysis {
         const quote = required(row.quote, "Цитата", 2000);
         if (!text.includes(quote))
             throw new InputError("Цитата отсутствует в исходном тексте. Результат не сохранён; проверьте публикацию вручную.");
+        if (!citationHasContext(text, quote))
+            throw new InputError("Цитата обрезает слово или исключает отрицание. Включите полное предложение с контекстом.");
         if (typeof row.confidence !== "number" || !Number.isFinite(row.confidence) || row.confidence < 0 || row.confidence > 1)
             throw new InputError("Некорректная уверенность ИИ.");
         return { code: row.code, quote, confidence: row.confidence, explanation: required(row.explanation, "Объяснение", 1500) };

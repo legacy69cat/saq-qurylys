@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { analyzeAdvertisement, aiConfigured } from "../src/server/ai/analyze";
+import { analyzeAdvertisement, aiConfigured, AnalysisUnavailableError } from "../src/server/ai/analyze";
 if (!aiConfigured()) {
     console.error("Настройте AI_GATEWAY_API_KEY и AI_GATEWAY_MODEL в .env.local. Живые запросы не выполнялись.");
     process.exit(1);
@@ -19,8 +19,9 @@ for (const item of cases) {
             passed++;
         console.log(JSON.stringify({ case: item.name, ok, expected: item.expected, actual: codes, output }));
     }
-    catch {
-        console.log(JSON.stringify({ case: item.name, ok: false, error: "Запрос или проверка ответа не завершены" }));
+    catch (error) {
+        console.log(JSON.stringify({ case: item.name, ok: false, error: error instanceof AnalysisUnavailableError ? error.code : "request_failed" }));
+        if (error instanceof AnalysisUnavailableError && ['rate_limit', 'access'].includes(error.code)) break;
     }
 }
 console.log(JSON.stringify({ model: process.env.AI_GATEWAY_MODEL, passed, total: cases.length, note: "Малый учебный набор; не оценка точности на реальных данных" }));
