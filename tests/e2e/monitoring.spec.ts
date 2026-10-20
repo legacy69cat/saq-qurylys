@@ -6,7 +6,7 @@ test("save search → queue → imported fixture → feed → archive", async ({
     page.on("pageerror", e => errors.push(e.message));
     await page.goto("/monitoring");
     await expect(page.getByRole("heading", { name: "Мониторинг соцсетей" })).toBeVisible();
-    await expect(page.getByText("Ключ Apify не настроен", { exact: true })).toBeVisible();
+    await expect(page.getByText("Сбор не подключён", { exact: true })).toBeVisible();
     await page.getByText("Добавить поиск", { exact: true }).click();
     const form = page.getByRole("form", { name: "Сохранить поиск", exact: true });
     await form.getByLabel("Город", { exact: true }).fill("Усть-Каменогорск");
@@ -53,7 +53,7 @@ test("search packs and analyst scenario", async ({ page }) => {
     await expect(form.getByRole('status')).toContainText('Сохранено');
     await expect(page.getByText('Управление поисками (18) · активно 0', { exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Как работать', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Сценарий аналитика ДЭР', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Порядок проверки', exact: true })).toBeVisible();
     await expect(page.locator('.scenario-steps > li')).toHaveCount(7);
     await expect(page.locator('main')).toContainText('R1 — 35');
     await expect(page.locator('main')).not.toContainText('Контур 07');

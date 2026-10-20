@@ -3,7 +3,7 @@ import {timingSafeEqual} from 'node:crypto';
 import {databasePath,openDatabase} from '../../../../server/db/connection';
 import {claimUpdate,finishUpdate} from '../../../../server/telegram/state';
 import {downloadPhoto,sendText} from '../../../../server/telegram/api';
-import {BOT_HELP,photoReport,textReport} from '../../../../server/telegram/report';
+import {BOT_HELP,BOT_PRIVACY,photoReport,textReport} from '../../../../server/telegram/report';
 export const runtime='nodejs';export const maxDuration=120;
 export async function POST(request:Request){
  const secret=process.env.TELEGRAM_WEBHOOK_SECRET,provided=request.headers.get('x-telegram-bot-api-secret-token')||'';
@@ -28,12 +28,13 @@ export async function POST(request:Request){
   if(!command&&(incoming.trim()||photoInput))submissionId=await saveSubmission(db,data.update_id,photoInput?`${typeof m.caption==='string'?m.caption.slice(0,1024):''}\n[Снимок получен. Текст ещё не распознан; оригинал не хранится в SAQ.]`:incoming,photoInput?'photo':'text');
   try{
    const text=typeof m.text==='string'?m.text:'';
-   if(/^\/(start|help|privacy)(?:@\w+)?(?:\s|$)/.test(text))reply=BOT_HELP;
+   if(/^\/privacy(?:@\w+)?(?:\s|$)/.test(text))reply=BOT_PRIVACY;
+   else if(/^\/(start|help)(?:@\w+)?(?:\s|$)/.test(text))reply=BOT_HELP;
    else if(Array.isArray(m.photo)&&m.photo.length){const photo=m.photo.at(-1);if(typeof photo?.file_id!=='string'||(photo.file_size??0)>5_000_000)throw new Error();reply=await photoReport(await downloadPhoto(photo.file_id),typeof m.caption==='string'?m.caption.slice(0,1024):'',async recognized=>{await db.prepare("UPDATE telegram_inbox SET text=? WHERE id=? AND status='new'").run(recognized.slice(0,16000),submissionId!);});}
    else if(text.trim())reply=textReport(text);
    else reply='Пришлите текст объявления или один скриншот как фото. Видео, файлы и голосовые пока не поддерживаются. /help — помощь.';
   }catch{reply='Не удалось проверить объявление. Попробуйте прислать текст вместо снимка или повторите позже. Оценка риска не сформирована.';}
-  if(submissionId)reply+=`\n\nОбращение ${submissionId} сохранено и передано в очередь аналитика. Предварительная оценка не является решением аналитика. Текст доступен сотрудникам SAQ; фото в базе не хранится.`;
+  if(submissionId)reply+=`\n\nОбращение ${submissionId} принято на проверку.`;
   await sendText(m.chat.id,reply);await finishUpdate(db,data.update_id);return Response.json({ok:true});
  }catch{return new Response(null,{status:503});}finally{db.close();}
 }

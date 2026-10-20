@@ -27,7 +27,7 @@ export default async function Home({ searchParams }: {
     catch (error) {
         if (!(error instanceof DatabaseNotReadyError))
             throw error;
-        return <main id="main" className="page"><h1>Подготовьте базу данных</h1><p>Создайте базу данных перед добавлением объектов.</p><pre>npm run db:setup</pre><p>Затем обновите эту страницу.</p></main>;
+        return <main id="main" className="page"><h1>Данные пока недоступны</h1><p>Обратитесь к администратору для завершения настройки.</p></main>;
     }
     const filtered = projects.filter((project) => (!zone || project.risk.zone === zone)
         && `${project.name} ${project.developer} ${project.address}`.toLocaleLowerCase("ru").includes(q.toLocaleLowerCase("ru")))

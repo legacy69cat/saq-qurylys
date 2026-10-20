@@ -13,7 +13,7 @@ export function Publications({ project, workflow, aiReady }: {
     aiReady: boolean;
 }) {
     return <section id="publications" aria-labelledby="publications-heading"><h2 id="publications-heading">Рекламные публикации</h2>
-    <p className="notice">{aiReady ? "ИИ предлагает гипотезы и цитаты. Балл меняется только после подтверждения человеком. По кнопке анализа текст и название ЖК передаются в Vercel AI Gateway." : "ИИ-анализ недоступен. Сохранение публикаций и ручная проверка доступны."}</p>
+    <p className="notice">{aiReady ? "Проверьте цитаты и подтвердите признаки для пересчёта балла." : "ИИ-анализ недоступен. Сохранение публикаций и ручная проверка доступны."}</p>
     {project.publications.toReversed().map((publication) => {
             const evidence = project.evidence.find((item) => item.id === publication.evidenceId);
             if (!evidence)
