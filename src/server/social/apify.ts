@@ -64,9 +64,16 @@ export class ApifyClient {
     }
     async poll(id: string): Promise<RemoteRun> { return this.run(await this.request(`actor-runs/${encodeURIComponent(id)}`)); }
     async items(datasetId: string, limit: number): Promise<unknown[]> {
-        const items = await this.request(`datasets/${encodeURIComponent(datasetId)}/items?format=json&clean=true&limit=${limit}`);
-        if (!Array.isArray(items))
-            throw new ApifyError("Apify вернул некорректный набор данных.");
-        return items.slice(0, limit);
+        if (!Number.isInteger(limit) || limit < 1 || limit > 1000) throw new ApifyError("Недопустимый лимит импорта.");
+        const rows: unknown[] = [];
+        const pageSize = Math.min(100, limit);
+        while (rows.length < limit) {
+            const count = Math.min(pageSize, limit - rows.length);
+            const page = await this.request(`datasets/${encodeURIComponent(datasetId)}/items?format=json&clean=true&offset=${rows.length}&limit=${count}`);
+            if (!Array.isArray(page) || page.length > count) throw new ApifyError("Apify вернул некорректную страницу данных.");
+            rows.push(...page);
+            if (page.length < count) break;
+        }
+        return rows;
     }
 }

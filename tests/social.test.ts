@@ -114,3 +114,15 @@ describe("social monitoring", () => {
         await expect(rejected.start(parseSearch(search))).rejects.toBeInstanceOf(ApifyError);
     });
 });
+
+describe('dataset pagination',()=>{
+ it('imports subsequent pages instead of truncating the dataset at the search target',async()=>{
+  const transport=vi.fn().mockResolvedValueOnce(Response.json(Array.from({length:100},(_,id)=>({id})))).mockResolvedValueOnce(Response.json([{id:100}]));
+  const rows=await new ApifyClient('test',transport).items('dataset',1000);
+  expect(rows).toHaveLength(101);expect(transport.mock.calls[1][0]).toContain('offset=100');
+ });
+ it('rejects a malformed second page without silently accepting partial coverage',async()=>{
+  const transport=vi.fn().mockResolvedValueOnce(Response.json(Array(100).fill({id:1}))).mockResolvedValueOnce(Response.json({error:true}));
+  await expect(new ApifyClient('test',transport).items('dataset',1000)).rejects.toThrow();
+ });
+});

@@ -17,8 +17,8 @@ export async function collectTick(db: DatabaseSync, client = new ApifyClient(), 
                 continue;
             }
             const search = saved.find((s) => s.id === job.search_id)!;
-            const rows = await client.items(remote.defaultDatasetId, search.resultLimit);
-            (await completeJob(db, job, search.platform, rows, remote.usageTotalUsd, remote.status === "SUCCEEDED" ? undefined : `Apify завершил запуск со статусом ${remote.status}. Сохранены доступные результаты.`));
+            const rows = await client.items(remote.defaultDatasetId, 1000);
+            (await completeJob(db, job, search.platform, rows, remote.usageTotalUsd, remote.status === "SUCCEEDED" ? (rows.length === 1000 ? "Достигнут защитный предел импорта 1000 записей. Набор может быть неполным; уточните поисковые фразы." : undefined) : `Apify завершил запуск со статусом ${remote.status}. Сохранены доступные результаты.`));
         }
         catch (error) {
             (await jobError(db, job.id, error instanceof ApifyError ? error.message : "Ошибка чтения результатов Apify."));

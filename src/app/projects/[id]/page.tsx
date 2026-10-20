@@ -1,3 +1,6 @@
+import { checkRegistryAction } from "@/server/registries/actions";
+import { ActionForm } from "@/components/action-form";
+import { AuthorField } from "@/components/workflow-forms";
 import { requireAccess } from "@/server/auth/access";
 import Link from "next/link";
 import { databasePath, openDatabase } from "@/server/db/connection";
@@ -54,6 +57,7 @@ export default async function ProjectPage({ params }: {
         <span className="factor-code">{factor.code}</span><div><h3>{factor.title}</h3><p>{factor.reason}</p>{project.factors.filter((item) => item.code === factor.code && item.reviewedBy).map((item) => <p key={item.code}>Проверил: {item.reviewedBy} · {date(item.reviewedAt!)}</p>)}{factor.evidenceIds.length ? <div className="evidence-links">{factor.evidenceIds.map((id, index) => <a key={id} href={`#evidence-${id}`}>Источник {index + 1}</a>)}</div> : null}</div><strong className={factor.counted ? "counted" : "not-counted"}>{factor.counted ? "+" : ""}{factor.points}</strong>
       </div>)}</div>
     </section>
+    <section><h2>Проверка открытых реестров</h2>{!project.isDemo ? <ActionForm action={checkRegistryAction} label="Проверить открытый реестр"><input type="hidden" name="projectId" value={id}/><p>Homeportal: поиск разрешений, гарантий и опубликованных предупреждений. eQurylys: проверка организации по точному БИН. Результат сохраняется ниже; скоринг изменяется после проверки аналитиком.</p><AuthorField/></ActionForm> : <p>Для вымышленных объектов внешние запросы отключены.</p>}</section>
     <section><h2>Проверка дополнительных факторов</h2>{(["R4", "R5", "R6"] as const).map(code => <details key={code}><summary>{code} · {code === "R4" ? "Коллективное обращение" : code === "R5" ? "Расхождение готовности" : "Простой или просрочка"}</summary><DocumentFactorForm projectId={id} code={code}/></details>)}</section>
     <section aria-labelledby="evidence-heading"><div className="list-heading"><h2 id="evidence-heading">Сохранённые материалы</h2><span>{project.evidence.length} источников</span></div>
       <div className="evidence-list">{project.evidence.map((item) => <article id={`evidence-${item.id}`} key={item.id} className="evidence-item"><h3>{item.source}</h3><p>{item.text}</p><div className="evidence-meta"><span>Зафиксировано {date(item.capturedAt)} (Алматы)</span></div>{item.url ? <p className="source-url"><a href={item.url} target="_blank" rel="noreferrer">{item.url}</a></p> : null}</article>)}</div>
