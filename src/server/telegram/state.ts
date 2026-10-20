@@ -1,5 +1,5 @@
 import type {Database} from '../db/connection';
-// Reuse the durable TTL key/counter store; never persist message contents or photos.
+// Durable delivery deduplication and quotas; submissions are stored separately in telegram_inbox.
 export async function claimUpdate(db:Database,id:number,chat:number,now=Date.now()):Promise<'claimed'|'done'|'busy'|'limited'>{
  await db.exec('BEGIN IMMEDIATE');
  try{

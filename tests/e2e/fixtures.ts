@@ -20,7 +20,7 @@ export const test = base.extend<{
             try {
                 (await migrate(db));
                 (await db.exec(`BEGIN IMMEDIATE;
-        DELETE FROM location_searches; DELETE FROM geocode_cache; DELETE FROM geocoder_state; DELETE FROM collected_links; DELETE FROM project_sources; DELETE FROM collection_matches; DELETE FROM collected_posts; DELETE FROM collection_jobs; DELETE FROM social_searches; DELETE FROM collector_state; DELETE FROM audit_events; DELETE FROM signals; DELETE FROM suggestions; DELETE FROM analysis_runs;
+        DELETE FROM telegram_inbox; DELETE FROM location_searches; DELETE FROM geocode_cache; DELETE FROM geocoder_state; DELETE FROM collected_links; DELETE FROM project_sources; DELETE FROM collection_matches; DELETE FROM collected_posts; DELETE FROM collection_jobs; DELETE FROM social_searches; DELETE FROM collector_state; DELETE FROM audit_events; DELETE FROM signals; DELETE FROM suggestions; DELETE FROM analysis_runs;
         DELETE FROM factor_evidence; DELETE FROM factors; DELETE FROM progress_observations;
         DELETE FROM publications; DELETE FROM legal_checks; DELETE FROM evidence; DELETE FROM projects;
         DELETE FROM developers; DELETE FROM reviewers; COMMIT;`));

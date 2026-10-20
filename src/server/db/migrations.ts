@@ -191,6 +191,15 @@ export async function migrate(db: DatabaseSync): Promise<void> {
       CREATE TABLE worker_lease(id INTEGER PRIMARY KEY CHECK(id=1), owner TEXT NOT NULL, expires_at INTEGER NOT NULL) STRICT;`));
             (await db.prepare("INSERT INTO schema_migrations VALUES (?,?)").run(6, new Date().toISOString()));
         }
+        if (!(await db.prepare("SELECT version FROM schema_migrations WHERE version=7").get())) {
+            await db.exec(`CREATE TABLE telegram_inbox (
+              id TEXT PRIMARY KEY, text TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('text','photo')),
+              created_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','reviewing','closed')),
+              reviewed_by TEXT, reviewed_at TEXT, comment TEXT NOT NULL DEFAULT ''
+            ) STRICT;
+            CREATE INDEX telegram_inbox_status ON telegram_inbox(status,created_at);`);
+            await db.prepare('INSERT INTO schema_migrations VALUES (?,?)').run(7,new Date().toISOString());
+        }
         (await db.exec("COMMIT"));
     }
     catch (error) {

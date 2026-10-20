@@ -13,7 +13,7 @@ afterEach(() => db.close());
 describe("schema and demo seed", () => {
     it("migrations can be rerun", async () => {
         (await migrate(db));
-        expect((await db.prepare("SELECT COUNT(*) AS n FROM schema_migrations").get())?.n).toBe(6);
+        expect((await db.prepare("SELECT COUNT(*) AS n FROM schema_migrations").get())?.n).toBe(7);
     });
     it("provides eight complete demo projects, twelve ads and expected risks", async () => {
         (await seedDemo(db));

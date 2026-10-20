@@ -1,3 +1,4 @@
+import {migrate} from '../src/server/db/migrations';
 import {it,expect,vi,afterEach} from 'vitest';
 import {openDatabase} from '../src/server/db/connection';
 import {claimUpdate,finishUpdate} from '../src/server/telegram/state';
@@ -26,8 +27,20 @@ it('sends plain text in bounded chunks and refuses unsafe download paths',async(
 it('delivers a scored reply once for repeated Telegram updates',async()=>{
  const {mkdtempSync,rmSync}=await import('node:fs');const {tmpdir}=await import('node:os');const {join}=await import('node:path');const dir=mkdtempSync(join(tmpdir(),'saq-bot-'));const path=join(dir,'test.sqlite');
  vi.stubEnv('TURSO_DATABASE_URL','');vi.stubEnv('VERCEL','');vi.stubEnv('DATABASE_PATH',path);vi.stubEnv('TELEGRAM_BOT_TOKEN','test');vi.stubEnv('TELEGRAM_WEBHOOK_SECRET','secret');
- const db=await openDatabase(path,{create:true});await db.exec('CREATE TABLE auth_throttle(key TEXT PRIMARY KEY,attempts INTEGER,reset_at INTEGER)');db.close();
+ const db=await openDatabase(path,{create:true});await migrate(db);db.close();
  const sent=vi.fn(async()=>Response.json({ok:true,result:{message_id:1}}));vi.stubGlobal('fetch',sent);
  const req=()=>new Request('https://site/api/webhooks/telegram',{method:'POST',headers:{'x-telegram-bot-api-secret-token':'secret'},body:JSON.stringify({update_id:42,message:{chat:{id:123,type:'private'},text:'ЖК строится. Внесите депозит 400 000 тенге.'}})});
- try{expect((await POST(req())).status).toBe(200);expect((await POST(req())).status).toBe(200);expect(sent).toHaveBeenCalledTimes(1);const body=JSON.parse((sent.mock.calls[0] as unknown as [string,RequestInit])[1].body as string);expect(body.chat_id).toBe(123);expect(body.text).toContain('Предварительные баллы: 35');}finally{rmSync(dir,{recursive:true,force:true});}
+ try{expect((await POST(req())).status).toBe(200);expect((await POST(req())).status).toBe(200);expect(sent).toHaveBeenCalledTimes(1);const body=JSON.parse((sent.mock.calls[0] as unknown as [string,RequestInit])[1].body as string);expect(body.chat_id).toBe(123);expect(body.text).toContain('Предварительные баллы: 35');expect(body.text).toContain('tg-42');const check=await openDatabase(path);try{expect(await check.prepare('SELECT count(*) AS n FROM telegram_inbox').get()).toMatchObject({n:1});}finally{check.close();}}finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+import {saveSubmission,reviewSubmission} from '../src/server/telegram/inbox';
+it('queues one submission per update and requires an analyst conclusion when closing',async()=>{
+ const db=await openDatabase(':memory:');try{
+ await migrate(db);await saveSubmission(db,501,'Объявление','text');await saveSubmission(db,501,'Повтор','text');
+ expect(await db.prepare('SELECT count(*) AS n FROM telegram_inbox').get()).toMatchObject({n:1});
+ expect(await db.prepare('SELECT text,status FROM telegram_inbox').get()).toMatchObject({text:'Объявление',status:'new'});
+ await expect(reviewSubmission(db,'tg-501','closed','','Аналитик')).rejects.toThrow();
+ await reviewSubmission(db,'tg-501','reviewing','','Аналитик');await reviewSubmission(db,'tg-501','closed','Проверено, данных недостаточно','Аналитик');
+ expect(await db.prepare('SELECT status,reviewed_by FROM telegram_inbox').get()).toMatchObject({status:'closed',reviewed_by:'Аналитик'});
+ }finally{db.close();}
 });
