@@ -156,6 +156,7 @@ flowchart LR
 | `DATABASE_PATH` | Путь к локальной SQLite |
 | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Облачная БД; при заданном URL имеет приоритет |
 | `APP_ENV`, `SAQ_AUTH_MODE`, `SAQ_DEMO_MODE` | Для production: `production`, `session`, `0` |
+| `SAQ_SHOW_SIMULATIONS` | `1` показывает вымышленные ЖК в рабочем реестре с отметками в карточках; по умолчанию `0`. Их баллы входят в сводку при включении |
 | `APP_URL` | HTTPS-адрес для origin и webhook |
 | `AI_GATEWAY_API_KEY`, `AI_GATEWAY_MODEL` | ИИ-анализ текста |
 | `DRONE_AI_MODEL` | Модель с изображениями для OCR и дрона |
